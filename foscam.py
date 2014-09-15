@@ -29,13 +29,14 @@ import socket
 def main():
 
     socket.setdefaulttimeout(config.url_timeout)
-    opts, args = getopt.getopt(sys.argv[1:], "hdi:c:", ["help", "debug", "image-dir=", "camera-name="])
+    opts, args = getopt.getopt(sys.argv[1:], "hdi:c:u:", ["help", "debug", "image-dir=", "camera-name=", "url="])
 
     _debug = False
     show_help = False
 
     image_dir = None
     camera_name = None;
+    url = creds.url_pass
     for o, a in opts:
         if o in("-d", "--debug"):
             _debug = True
@@ -45,6 +46,8 @@ def main():
             image_dir = a
         if o in("-c", "--camera-name"):
             camera_name = a
+        if o in("-u", "--url"):
+            url = a
 
     if not os.path.isdir(image_dir):
         print "Image store directory " + image_dir + " does not exist. Aborting"
@@ -67,15 +70,20 @@ def main():
             log.write
             ctr = 0
             fname_ctr = 0
-            timestr = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-            timedir = os.path.join(image_dir, timestr)
+            monthstr = datetime.datetime.now().strftime('%Y-%m')
+            monthdir = os.path.join(image_dir, monthstr)
+            if not os.path.isdir(monthdir):
+                os.makedirs(monthdir)
+
+            timestr = datetime.datetime.now().strftime('%d_%H-%M-%S')
+            timedir = os.path.join(monthdir, timestr)
             os.makedirs(timedir)
             while ctr <int(config.rotate_interval):
                 ctr = ctr + int(config.lapse_interval)
                 fname_ctr = fname_ctr + 1
                 fname = "%s/snap_%05d.jpg" % (timedir, fname_ctr)
                 try:
-                    urllib.urlretrieve(creds.url_pass, fname)
+                    urllib.urlretrieve(url, fname)
                 except IOError:
                     log.write("Exception in urllib")
                     error_count = error_count + 1
